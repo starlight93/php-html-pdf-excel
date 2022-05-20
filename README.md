@@ -5,6 +5,89 @@ Thanks to
 
 ![Example](testing/example-design.png)
 
+### Installation
+```
+composer require starlight93/html-pdf-excel
+```
+
+### Usage
+
+```php
+
+//  your array of data, see: /testing/1data.json
+$data = [
+    'key'=>'value',
+    'detail' => [
+        [
+            'key_detail1'   => 'value1',
+            'amount'    => 2000
+        ],[
+            'key_detail1'   => 'value2',
+            'amount'    => 1000
+        ]
+    ]
+];
+
+//  example: function to get string from a text file
+public function getFromFile( $path ){
+    $file = fopen( $path, "r" );
+    $dt =  fread( $file ,filesize($path) ) ;
+    fclose($file);
+    return $dt;
+}
+
+//  your template string, see: /testing/1template.txt
+$template = getFromFile(  "your text file path" );
+
+$renderer = new \Starlight93\HtmlPdfExcel\Renderer;
+//  if you want to try with /testing data dan template just pass true to Renderer Construct
+// $renderer = new \Starlight93\HtmlPdfExcel\Renderer( true );
+// with parameter true will take the data and template from /testing dir, so you can focus on config only
+
+//  ======================= example rendering PDF start
+$renderer->renderPDF(data: $data, template: $template, config: [
+    'title' =>'testing',
+    'break' => true,
+    'left'  => 10,
+    'top'   => 10,
+    'right' => 12,
+    'orientation'   =>'L',
+    'size'  => [210, 297], // can be A4, F4, etc
+    'fontSize'  => 10,
+    'callback' => function( $pdf ){
+        //  see tcpdf documentation for any available property and function
+    },
+    'header_callback' => function( $hd ){
+        //  see tcpdf documentation for any available property and function
+    },
+
+    'footer_callback' => function( $ft ){
+        //  see tcpdf documentation for any available property and function
+    },
+]);
+//  ======================= end
+
+
+//  ======================= example rendering XLS start
+$renderer->renderXls(data: $data, template: $template, config: [
+    'title' => 'testing',
+    'break' => true, // to separate into 
+    'orientation'   =>'L',
+    'size'  => 9, // see https://github.com/PHPOffice/PhpSpreadsheet/blob/master/src/PhpSpreadsheet/Worksheet/PageSetup.php
+    'fontSize'  => 10
+]);
+//  ======================= end
+
+//  ======================= example rendering XLS start
+$renderer->renderHtml(data: $data, template: $template, config: [
+    'title' =>'testing',
+    // 'orientation'   =>'L',
+    // 'size'  => 'A4',
+    'fontSize'  => 10
+]);
+//  ======================= end
+
+```
 ### Basic Syntax
 | Code | Description |
 | --- | --- |

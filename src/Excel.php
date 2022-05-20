@@ -10,6 +10,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate as coor;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
 class Excel {
 
@@ -40,13 +41,25 @@ class Excel {
     {
         $this->sp = new Spreadsheet();
         $this->sp->getProperties()
-            ->setCreator( @$config['creator'] ?? 'HtmlPdfExcel' )
-            ->setLastModifiedBy( @$config['last_modified_by'] ?? 'HtmlPdfExcel' )
-            ->setTitle( @$config['title'] ?? uniqid() )
-            ->setSubject( @$config['subject'] ?? uniqid() )
-            ->setDescription(@$config['subject'] ?? "Report")
-            ->setKeywords( @$config['keyword'] ?? "" )
-            ->setCategory( @$config['category'] ?? "" );
+            ->setCreator( @$this->config['creator'] ?? 'HtmlPdfExcel' )
+            ->setLastModifiedBy( @$this->config['last_modified_by'] ?? 'HtmlPdfExcel' )
+            ->setTitle( @$this->config['title'] ?? uniqid() )
+            ->setSubject( @$this->config['subject'] ?? uniqid() )
+            ->setDescription(@$this->config['subject'] ?? "Report")
+            ->setKeywords( @$this->config['keyword'] ?? "" )
+            ->setCategory( @$this->config['category'] ?? "" );
+    }
+
+    private function getOrientation( $key ){
+        if( !$key ){
+            return pageSetup::ORIENTATION_DEFAULT;
+        }
+        if( strpos( strtolower($key), 'l' )!==false ){
+            return pageSetup::ORIENTATION_LANDSCAPE;
+        }elseif( strpos( strtolower($key), 'p' )!==false ){
+            return pageSetup::ORIENTATION_PORTRAIT;
+        }
+        return pageSetup::ORIENTATION_DEFAULT;
     }
 
     public function render()
@@ -56,13 +69,17 @@ class Excel {
                     $this->linesLength = 1;
                 }
                 
-                $sheetTitle = @$dt['title'] ?? @$config['title'] ?? 'Sheet ';
+                $sheetTitle = @$dt['title'] ?? @$this->config['title'] ?? 'Sheet ';
                 
                 if( $index == 0 || !$this->break ){
                     if(!$this->break && !isset($dt['title'])){
                         $sheetTitle .= ((string) (++$index));
                     }
                     $this->sp->getActiveSheet()->setTitle( $sheetTitle );
+                    //  page size and orientation
+                    $this->sp->getActiveSheet()->getPageSetup()->setOrientation($this->getOrientation(@$this->config['orientation']));
+                    $this->sp->getActiveSheet()->getPageSetup()->setPaperSize( @$this->config['size']);
+
                     $this->generateSheet( $dt );
                     $highestColumn = $this->sp->getActiveSheet()->getHighestColumn(); // e.g 'F'
                     $highestColumnIndex = coor::columnIndexFromString($highestColumn);
@@ -79,6 +96,11 @@ class Excel {
                     $workSheet = new Worksheet($this->sp, $sheetTitle);
                     $this->sp->addSheet($workSheet, $index);
                     $this->sp->setActiveSheetIndexByName($sheetTitle);
+                    
+                    //  page size and orientation
+                    $this->sp->getActiveSheet()->getPageSetup()->setOrientation($this->getOrientation(@$this->config['orientation']));
+                    $this->sp->getActiveSheet()->getPageSetup()->setPaperSize( @$this->config['size']);
+
                     $this->generateSheet( $dt );
                     for($col = 'A'; $col !== 'Z'; $col++) {
                         $this->sp->getActiveSheet()
@@ -90,7 +112,7 @@ class Excel {
             $this->sp->setActiveSheetIndex(0);
             
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="'.(@$config['title'] ?? date('Y-m-d_h-i-s ').uniqid()).'.xlsx"');
+            header('Content-Disposition: attachment;filename="'.(@$this->config['title'] ?? date('Y-m-d_h-i-s ').uniqid()).'.xlsx"');
             header('Cache-Control: max-age=0');
             header('Cache-Control: max-age=1');
 

@@ -42,6 +42,7 @@ class Html {
 
     protected function generateRows( array $dataArray ) : array
     {
+        $totalTable = [];
         $this->similiar = "";
         uksort($dataArray,function ($a,$b){
             return strlen($b)-strlen($a);

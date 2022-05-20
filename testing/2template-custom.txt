@@ -1,0 +1,18 @@
+FAKTUR PENJUALAN::tbcu						
+DAFA Stationary::bt				?	No. Nota::t	: 22012312331::t
+JL. Slamet Riyadi 61A Banjaran Kediri::t				?	Kepada YTH::t	: PUSKESMAS NGLETIH::t
+Telp. 08125981880, 0354 691582,85102600025::t				?		  Kediri::t
+Kasir	: Indah			?	Tanggal::t	: 20/12/1212::t
+				?		
+?	?	?	?	?	?	?
+No::bhcw5%	Kode::bhcw15%	Nama Barang::bhcw25%	Jumlah::bhcw10%	Harga::bhcw15%	Disc (%)::bhcw15%	Sub Total::bhcw15%
+_number	$detail.code	$detail.name	$detail.qty::r.	$detail.price::r.	$detail.disc::r.	$detail.amout::r.
+_number	$detail.code	$detail.name	$detail.qty::r.	$detail.price::r.	$detail.disc::r.	$detail.amout::r.
+?	?	?	?	?	SubTotal::rt	2890000::r.
+NB: Barang telah diterima dengan baik<br/>       Klaim Setelah pengiiman tidak diterima::t				?	Disc::rt_	2890000::r._
+				?	Total::rt	2890000::r._
+				?		
+Pembeli::t		Pengirim::t		Administrasi,::t		Gudang::t
+						
+_________::t		_________::t		_________::t		_________::t
+						
