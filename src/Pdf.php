@@ -70,11 +70,11 @@ class Pdf extends Html {
                     $pdf->setPageMark();
                 }
 
-                $pdf->writeHTML($html, true, false,true,false,'');
+                $pdf->writeHTML( str_replace('1px', '0.5px', $html), true, false,true,false,'' );
             }
         }else{
             $pdf->AddPage($pageOrientation, $pageSize);
-            $pdf->writeHTML(implode('', $htmlArray), true, false,true,false,'');
+            $pdf->writeHTML( str_replace('1px', '0.5px', implode('', $htmlArray) ), true, false,true,false,'');
         }
         $pdf->Output($pageTitle.'.pdf','I');
     }
