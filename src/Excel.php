@@ -35,6 +35,53 @@ class Excel {
         $this->fontSize = $this->config[ 'fontSize'];
         $this->break = $this->config[ 'break'];
         $this->defineSpreadsheet();
+        $this->isDynamic = strpos( $template, "\t." ) !== false;
+    }
+
+    protected function getDynamicTemplate( array $currentData ){
+        $oldTemplate = $this->templateArr;
+        $fixedTemplate = array_map(function($d){
+            return explode("\t", $d);
+        }, $oldTemplate);
+        
+        foreach( $oldTemplate as $rowIdx => $row ){
+            $cols = explode("\t", $row);
+            $foundIdx = null;
+            foreach( $cols as $colIdx => $col ){
+                $insertedArr=[];
+                $insertedDetailArr=[];
+                if( mb_substr($col, 0, 1)  == '.' ){                    
+                    $key = str_replace(".","", ($keyArr=explode("::", $col)) [0]);
+                    if( ($dynamicCols = @$currentData[$key]) ){
+                        foreach($dynamicCols as $key=>$value ){
+                            $insertedArr[] =  $key.(@$keyArr[1]?"::".$keyArr[1]:'') ;
+                            $insertedDetailArr[] =  $value ;
+                        }
+                    }
+                }
+                if( $insertedArr ){
+                    $total = count($insertedArr);
+                    foreach( $fixedTemplate as $fixIdx=>$fixRow){
+                        $fakeValueArr = [];
+                        if($rowIdx==$fixIdx){
+                            $fakeValueArr = $insertedArr;
+                        }elseif ( $fixIdx==$rowIdx+1 ) {
+                            $fakeValueArr = $insertedDetailArr;
+                        }elseif ( $fixIdx==$rowIdx+2 ) {
+                            $fixedTemplate[$fixIdx]  = $fixedTemplate[$fixIdx-1];
+                            continue;
+                        }else{
+                            $currentColValue = $fixedTemplate[$fixIdx][$colIdx];
+                            $fakeValueArr = array_map( fn($d) =>$currentColValue, $insertedArr);
+                        }
+                        array_splice( $fixedTemplate[$fixIdx], $colIdx, 1, $fakeValueArr );
+                    }
+                }
+            }
+        }
+        return array_map(function($d){
+            return implode("\t", $d);
+        }, $fixedTemplate);
     }
 
     private function defineSpreadsheet() : void
@@ -64,71 +111,72 @@ class Excel {
 
     public function render()
     {
-            foreach( $this->data as $index => $dt ){
-                if($this->break){
-                    $this->linesLength = 1;
+        foreach( $this->data as $index => $dt ){
+            if($this->break){
+                $this->linesLength = 1;
+            }
+            
+            $sheetTitle = @$dt['title'] ?? @$this->config['title'] ?? 'Sheet ';
+            
+            if( $index == 0 || !$this->break ){
+                if(!$this->break && !isset($dt['title'])){
+                    $sheetTitle .= ((string) (++$index));
                 }
-                
-                $sheetTitle = @$dt['title'] ?? @$this->config['title'] ?? 'Sheet ';
-                
-                if( $index == 0 || !$this->break ){
-                    if(!$this->break && !isset($dt['title'])){
-                        $sheetTitle .= ((string) (++$index));
-                    }
-                    $this->sp->getActiveSheet()->setTitle( $sheetTitle );
-                    //  page size and orientation
-                    $this->sp->getActiveSheet()->getPageSetup()->setOrientation($this->getOrientation(@$this->config['orientation']));
-                    $this->sp->getActiveSheet()->getPageSetup()->setPaperSize( @$this->config['size']);
+                $this->sp->getActiveSheet()->setTitle( $sheetTitle );
+                //  page size and orientation
+                $this->sp->getActiveSheet()->getPageSetup()->setOrientation($this->getOrientation(@$this->config['orientation']));
+                $this->sp->getActiveSheet()->getPageSetup()->setPaperSize( @$this->config['size']);
 
-                    $this->generateSheet( $dt );
-                    $highestColumn = $this->sp->getActiveSheet()->getHighestColumn(); // e.g 'F'
-                    $highestColumnIndex = coor::columnIndexFromString($highestColumn);
-                    
-                    for($col = 1; $col <= $highestColumnIndex; ++$col) {
-                        $this->sp
-                        ->getActiveSheet()->getColumnDimension(coor::stringFromColumnIndex($col))
-                        ->setAutoSize(true);            
-                    }
-                }else{
-                    if( !isset($dt['title']) ){
-                        $sheetTitle .= ((string) (++$index));
-                    }
-                    $workSheet = new Worksheet($this->sp, $sheetTitle);
-                    $this->sp->addSheet($workSheet, $index);
-                    $this->sp->setActiveSheetIndexByName($sheetTitle);
-                    
-                    //  page size and orientation
-                    $this->sp->getActiveSheet()->getPageSetup()->setOrientation($this->getOrientation(@$this->config['orientation']));
-                    $this->sp->getActiveSheet()->getPageSetup()->setPaperSize( @$this->config['size']);
+                $this->generateSheet( $dt );
+                $highestColumn = $this->sp->getActiveSheet()->getHighestColumn(); // e.g 'F'
+                $highestColumnIndex = coor::columnIndexFromString($highestColumn);
+                
+                for($col = 1; $col <= $highestColumnIndex; ++$col) {
+                    $this->sp
+                    ->getActiveSheet()->getColumnDimension(coor::stringFromColumnIndex($col))
+                    ->setAutoSize(true);            
+                }
+            }else{
+                if( !isset($dt['title']) ){
+                    $sheetTitle .= ((string) (++$index));
+                }
+                $workSheet = new Worksheet($this->sp, $sheetTitle);
+                $this->sp->addSheet($workSheet, $index);
+                $this->sp->setActiveSheetIndexByName($sheetTitle);
+                
+                //  page size and orientation
+                $this->sp->getActiveSheet()->getPageSetup()->setOrientation($this->getOrientation(@$this->config['orientation']));
+                $this->sp->getActiveSheet()->getPageSetup()->setPaperSize( @$this->config['size']);
 
-                    $this->generateSheet( $dt );
-                    for($col = 'A'; $col !== 'Z'; $col++) {
-                        $this->sp->getActiveSheet()
-                            ->getColumnDimension($col)
-                            ->setAutoSize(true);        
-                    }
+                $this->generateSheet( $dt );
+                for($col = 'A'; $col !== 'Z'; $col++) {
+                    $this->sp->getActiveSheet()
+                        ->getColumnDimension($col)
+                        ->setAutoSize(true);        
                 }
             }
-            $this->sp->setActiveSheetIndex(0);
-            
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="'.(@$this->config['title'] ?? date('Y-m-d_h-i-s ').uniqid()).'.xlsx"');
-            header('Cache-Control: max-age=0');
-            header('Cache-Control: max-age=1');
+        }
+        $this->sp->setActiveSheetIndex(0);
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="'.(@$this->config['title'] ?? date('Y-m-d_h-i-s ').uniqid()).'.xlsx"');
+        header('Cache-Control: max-age=0');
+        header('Cache-Control: max-age=1');
 
-            // If you're serving to IE over SSL, then the following may be needed
-            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
-            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
-            header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
-            header('Pragma: public'); // HTTP/1.0
+        // If you're serving to IE over SSL, then the following may be needed
+        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
+        header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+        header('Pragma: public'); // HTTP/1.0
 
-            $writer = IOFactory::createWriter($this->sp, 'Xlsx');
-            $writer->save('php://output');
+        $writer = IOFactory::createWriter($this->sp, 'Xlsx');
+        $writer->save('php://output');
     }
 
     private function generateRows( array $dataArray ) : array
     {
         $this->similiar = "";
+        $currentTemplateArr = $this->isDynamic?$this->getDynamicTemplate( $dataArray ) : $this->templateArr;
         uksort($dataArray,function ($a,$b){
             return strlen($b)-strlen($a);
         });
@@ -139,8 +187,8 @@ class Excel {
                 }
             }
         }
-        foreach($this->templateArr AS $i => $dt){
-            if( isset($this->templateArr[$i+1]) && $this->templateArr[$i+1]==$dt &&  $dt!==$this->similiar){
+        foreach($currentTemplateArr AS $i => $dt){
+            if( isset($currentTemplateArr[$i+1]) && $currentTemplateArr[$i+1]==$dt &&  $dt!==$this->similiar){
                 $this->similiar  = $dt;
                 foreach($dataArray as $dataIndex => $rowData){
                     if(is_array($rowData) && strpos($dt,'$'.$dataIndex.".")!==false ){
