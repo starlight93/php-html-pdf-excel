@@ -18,6 +18,7 @@ class Html {
     public $sp;
     public $linesLength = 1;
     public $similiar = '';
+    public $isDynamic = false;
 
     function __construct( array $data, string $template, array $config = []  ){
         $this->templateArr = explode( "\n", $template ); //    exploded by new line in linux
@@ -26,9 +27,56 @@ class Html {
         $this->config = array_merge($this->config, $config);
         $this->fontSize = $this->config[ 'fontSize'];
         $this->break = $this->config[ 'break'];
+        $this->templateArr[] = implode("\t", array_map(fn()=>"",explode("\t", end($this->templateArr))));
+        $this->isDynamic = strpos( $template, "\t." ) !== false;
     }
 
-    
+    protected function getDynamicTemplate( array $currentData ){
+        $oldTemplate = $this->templateArr;
+        $fixedTemplate = array_map(function($d){
+            return explode("\t", $d);
+        }, $oldTemplate);
+        
+        foreach( $oldTemplate as $rowIdx => $row ){
+            $cols = explode("\t", $row);
+            $foundIdx = null;
+            foreach( $cols as $colIdx => $col ){
+                $insertedArr=[];
+                $insertedDetailArr=[];
+                if( mb_substr($col, 0, 1)  == '.' ){                    
+                    $key = str_replace(".","", ($keyArr=explode("::", $col)) [0]);
+                    if( ($dynamicCols = @$currentData[$key]) ){
+                        foreach($dynamicCols as $key=>$value ){
+                            $insertedArr[] =  $key.(@$keyArr[1]?"::".$keyArr[1]:'') ;
+                            $insertedDetailArr[] =  $value ;
+                        }
+                    }
+                }
+                if( $insertedArr ){
+                    $total = count($insertedArr);
+                    foreach( $fixedTemplate as $fixIdx=>$fixRow){
+                        $fakeValueArr = [];
+                        if($rowIdx==$fixIdx){
+                            $fakeValueArr = $insertedArr;
+                        }elseif ( $fixIdx==$rowIdx+1 ) {
+                            $fakeValueArr = $insertedDetailArr;
+                        }elseif ( $fixIdx==$rowIdx+2 ) {
+                            $fixedTemplate[$fixIdx]  = $fixedTemplate[$fixIdx-1];
+                            continue;
+                        }else{
+                            $currentColValue = $fixedTemplate[$fixIdx][$colIdx];
+                            $fakeValueArr = array_map( fn($d) =>$currentColValue, $insertedArr);
+                        }
+                        array_splice( $fixedTemplate[$fixIdx], $colIdx, 1, $fakeValueArr );
+                    }
+                }
+            }
+        }
+        return array_map(function($d){
+            return implode("\t", $d);
+        }, $fixedTemplate);
+    }
+
     public function render()
     {
         $htmlArray = [];
@@ -43,6 +91,7 @@ class Html {
     protected function generateRows( array $dataArray ) : array
     {
         $totalTable = [];
+        $currentTemplateArr = $this->isDynamic?$this->getDynamicTemplate( $dataArray ) : $this->templateArr;
         $this->similiar = "";
         uksort($dataArray,function ($a,$b){
             return strlen($b)-strlen($a);
@@ -54,8 +103,9 @@ class Html {
                 }
             }
         }
-        foreach($this->templateArr AS $i => $dt){
-            if( isset($this->templateArr[$i+1]) && $this->templateArr[$i+1]==$dt &&  $dt!==$this->similiar){
+
+        foreach($currentTemplateArr AS $i => $dt){
+            if( isset($currentTemplateArr[$i+1]) && $currentTemplateArr[$i+1]==$dt &&  $dt!==$this->similiar){
                 $this->similiar  = $dt;
                 foreach($dataArray as $dataIndex => $rowData){
                     if(is_array($rowData) && strpos($dt,'$'.$dataIndex.".")!==false ){

@@ -127,3 +127,46 @@ $renderer->renderHtml(data: $data, template: $template, config: [
 ### Additional Features
 
 You can also use any mathematic formula to get dynamic value as the image above such as summary or etc.
+
+### Dynamic Columns (table)
+Below shows how to generate dynamic templates. Focus to *.dynamic* string which is shown in the picture
+
+![Example](testing/example-dynamic-design.png)
+
+```php
+
+//  your array of data for dynamic columns
+$data = [
+    'key'=>'value',
+    'details' => [
+        [
+            'key_detail1'   => 'value1',
+            'amount'    => 2000,
+            'another1'    => 5000,
+            'another2'    => 1000,
+        ],[
+            'key_detail1'   => 'value2',
+            'amount'    => 1000,
+            'amount'    => 2000,
+            'another1'    => 2000,
+            'another2'    => 4000
+        ],[
+            'key_detail1'   => 'value2',
+            'amount'    => 1000,
+            'amount'    => 2000,
+            'another1'    => 3000,
+            'another2'    => 2000
+        ]
+    ],
+
+    // key below is to generate dynamic columns
+    'dynamic' => [
+        "Col Dynamic 1"=>"\$details.another1",
+        "Col Dynamic 2"=>"\$details.another2",
+    ]
+];
+```
+
+By using data array above, the .dynamic header in the template will be replaced with the following dynamic key in the data array. So the final template result will be like this picture shown below:
+
+![Example](testing/example-dynamic-design-result.png)
