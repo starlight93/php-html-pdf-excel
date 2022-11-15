@@ -28,7 +28,7 @@ class Excel {
     public $similiar = '';
 
     function __construct( array $data, string $template, array $config = []  ){
-        $this->templateArr = explode( "\n", $template ); //    exploded by new line in linux
+        $this->templateArr = explode( "\n", $template."\r\n" ); //    exploded by new line in linux
         $this->isMulti = isset( $data[0] ) && is_array( $data[0] );
         $this->data = $this->isMulti? $data : [$data];
         $this->config = array_merge($this->config, $config);

@@ -21,13 +21,13 @@ class Html {
     public $isDynamic = false;
 
     function __construct( array $data, string $template, array $config = []  ){
-        $this->templateArr = explode( "\n", $template ); //    exploded by new line in linux
+        $this->templateArr = explode( "\n", $template."\r\n" ); //    exploded by new line in linux
         $this->isMulti = isset( $data[0] ) && is_array( $data[0] );
         $this->data = $this->isMulti? $data : [$data];
         $this->config = array_merge($this->config, $config);
         $this->fontSize = $this->config[ 'fontSize'];
         $this->break = $this->config[ 'break'];
-        $this->templateArr[] = implode("\t", array_map(fn()=>"",explode("\t", end($this->templateArr))));
+        $this->templateArr[] = implode("\t", array_map(fn()=>"?",explode("\t", end($this->templateArr))));
         $this->isDynamic = strpos( $template, "\t." ) !== false;
     }
 
