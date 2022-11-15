@@ -261,7 +261,7 @@ class Html {
                                 if(strpos($colConfig,"[")!==false){
                                     $style .= "border-left:1px solid black;";$borderStyling=true;
                                 }       
-                                if(strpos($colConfig,"[")!==false){
+                                if(strpos($colConfig,"]")!==false){
                                     $style .= "border-right:1px solid black;";$borderStyling=true;
                                 }        
                                 if(strpos($colConfig,"g")!==false){
