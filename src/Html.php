@@ -6,6 +6,8 @@ use MathParser\StdMathParser;
 use MathParser\Interpreting\Evaluator;
 
 class Html {
+    use HelperTrait;
+    
     public $data;
     public $templateArr;
     public $fontSize; 
@@ -99,7 +101,7 @@ class Html {
         foreach($dataArray as $index => $rowData){
             if(is_array($rowData) && isset($rowData[0])){
                 foreach(array_keys($rowData[0]) as $key){
-                    $dataArray["sum.$index.$key"] = array_sum(array_column($rowData,$key));
+                    $dataArray["sum.$index.$key"] = $this->data_sum(array_column($rowData,$key));
                 }
             }
         }
@@ -261,7 +263,7 @@ class Html {
                                 if(strpos($colConfig,"[")!==false){
                                     $style .= "border-left:1px solid black;";$borderStyling=true;
                                 }       
-                                if(strpos($colConfig,"[")!==false){
+                                if(strpos($colConfig,"]")!==false){
                                     $style .= "border-right:1px solid black;";$borderStyling=true;
                                 }        
                                 if(strpos($colConfig,"g")!==false){
