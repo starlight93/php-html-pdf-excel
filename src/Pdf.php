@@ -76,6 +76,7 @@ class Pdf extends Html {
             $pdf->AddPage($pageOrientation, $pageSize);
             $pdf->writeHTML( str_replace('1px', '0.5px', implode('', $htmlArray) ), true, false,true,false,'');
         }
+        header('Access-Control-Allow-Origin: *');
         $pdf->Output($pageTitle.'.pdf','I');
     }
 }
