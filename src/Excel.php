@@ -158,7 +158,7 @@ class Excel {
             }
         }
         $this->sp->setActiveSheetIndex(0);
-        
+        header('Access-Control-Allow-Origin: *');
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="'.(@$this->config['title'] ?? date('Y-m-d_h-i-s ').uniqid()).'.xlsx"');
         header('Cache-Control: max-age=0');
